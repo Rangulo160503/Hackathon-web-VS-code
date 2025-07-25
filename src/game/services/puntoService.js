@@ -1,19 +1,15 @@
-
-const isProd = process.env.NODE_ENV === "production";
-
-const API_BASE_URL = isProd
-  ? "https://hackathon-api-azavg2aqbdhjcafx.canadacentral-01.azurewebsites.net"
-  : "/api";
+const API_BASE_URL = "https://hackathon-api-azavg2aqbdhjcafx.canadacentral-01.azurewebsites.net";
 
 export const obtenerPuntos = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/Punto`);
     if (!response.ok) {
-      throw new Error("Error al obtener puntos");
+      throw new Error(`Error al obtener puntos: ${response.status} ${response.statusText}`);
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error("Error en puntoService:", error);
+    console.error("🛑 Error en obtenerPuntos:", error.message);
     return [];
   }
 };

@@ -7,20 +7,34 @@ export class WorldMap extends Scene {
   }
 
   preload() {
-    this.load.image('mapa', 'assets/mapa.png');
+    this.load.image('mapa4', 'assets/mapa4.png');
+    this.load.image('portal1', 'assets/portal1.png');
+    this.load.image('portal2', 'assets/portal2.png');
+    this.load.image('portal3', 'assets/portal3.png');
+    this.load.image('sat1', 'assets/sat1.png');
+    this.load.image('sat2', 'assets/sat2.png');
+    this.load.image('tor1', 'assets/tor1.png');
+    this.load.image('tor2', 'assets/tor2.png');
+    this.load.image('man1', 'assets/man1.png');
+    this.load.audio('musica1', 'assets/audio/musica1.mp3');
   }
 
   create() {
-    // ✅ Fondo del mapa
-    const fondo = this.add.image(0, 0, 'mapa').setOrigin(0);
+    const fondo = this.add.image(0, 0, 'mapa4').setOrigin(0);
     fondo.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 
-    // ✅ Profesora (jugador)
-    this.player = this.add.rectangle(400, 300, 32, 32, 0xffff00);
-    this.physics.add.existing(this.player);
-    this.player.body.setCollideWorldBounds(true);
+    // Generar textura amarilla
+const g = this.add.graphics();
+g.fillStyle(0xffff00, 1);
+g.fillRect(0, 0, 32, 32);
+g.generateTexture('jugadorAmarillo', 32, 32);
+g.destroy();
 
-    // ✅ Seguidores (niños)
+    // ✅ Jugador (sprite en lugar de rectangle para colisiones)
+    this.player = this.physics.add.sprite(400, 300, 'jugadorAmarillo')
+  .setOrigin(0.5)
+  .setCollideWorldBounds(true);
+
     this.followers = [];
     this.dispersePositions = [];
 
@@ -33,84 +47,122 @@ export class WorldMap extends Scene {
       this.dispersePositions.push(new Phaser.Math.Vector2());
     }
 
-    // ✅ Control de teclado
     this.cursors = this.input.keyboard.createCursorKeys();
-
-    // ✅ Control táctil / mouse
     this.isTouching = false;
     this.targetX = this.player.x;
     this.targetY = this.player.y;
 
-    this.input.on('pointerdown', (pointer) => {
+    this.input.on('pointerdown', pointer => {
       this.isTouching = true;
       this.targetX = pointer.worldX;
       this.targetY = pointer.worldY;
     });
-
-    this.input.on('pointermove', (pointer) => {
+    this.input.on('pointermove', pointer => {
       if (this.isTouching) {
         this.targetX = pointer.worldX;
         this.targetY = pointer.worldY;
       }
     });
-
     this.input.on('pointerup', () => {
       this.isTouching = false;
       this.player.body.setVelocity(0);
     });
 
-    // ✅ Para detectar si la profesora se mueve
     this.lastPlayerPosition = new Phaser.Math.Vector2(this.player.x, this.player.y);
     this.isPlayerMoving = false;
-
-    // ✅ Portales desde API
     this.portales = this.physics.add.group();
 
     obtenerPuntos().then(puntos => {
       puntos.forEach(p => {
-        const color = Phaser.Display.Color.RGBStringToColor(p.color).color;
-        const portal = this.add.circle(p.x, p.y, 16, color);
-        this.physics.add.existing(portal);
-        portal.body.setImmovable(true);
-        portal.setData('info', p);
-        this.portales.add(portal);
+        let portalKey = 'portal1';
+        if (p.id === "2") portalKey = 'portal2';
+        else if (p.id === "3") portalKey = 'portal3';
 
-        // Nombre del portal
-        this.add.text(p.x - 25, p.y - 25, p.nombre, {
-          fontSize: '12px',
-          fill: '#fff',
-          backgroundColor: '#0006',
-          padding: { x: 4, y: 2 }
-        });
+        const portal = this.physics.add.sprite(p.x, p.y, portalKey)
+          .setOrigin(0.5)
+          .setDisplaySize(80, 150)
+          .setImmovable(true);
+
+        portal.body.setSize(80, 150);
+        portal.setData('info', p);
+
+        this.portales.add(portal);
       });
 
       this.physics.add.overlap(this.player, this.portales, this.entrarPortal, null, this);
     });
+
+    // 🛰️ Puntos decorativos
+    this.puntosDecorativos = this.add.group();
+    const decorativosKeys = ['sat1', 'sat2', 'tor1', 'tor2', 'man1'];
+
+    for (let i = 0; i < 10; i++) {
+      const x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
+      const y = Phaser.Math.Between(50, this.sys.game.config.height - 50);
+
+      const spriteKey = Phaser.Utils.Array.GetRandom(decorativosKeys);
+      const decorativo = this.add.image(x, y, spriteKey).setOrigin(0.5).setScale(0.08);
+
+      this.puntosDecorativos.add(decorativo);
+
+      if (spriteKey.startsWith('sat')) {
+        const moverSat = () => {
+          const newX = Phaser.Math.Between(50, this.sys.game.config.width - 50);
+          const newY = Phaser.Math.Between(50, this.sys.game.config.height - 50);
+          this.tweens.add({
+            targets: decorativo,
+            x: newX,
+            y: newY,
+            duration: Phaser.Math.Between(8000, 15000),
+            ease: 'Sine.easeInOut',
+            onComplete: moverSat
+          });
+        };
+        moverSat();
+      } else {
+        const moverAnimal = () => {
+          const tiempoEspera = Phaser.Math.Between(5000, 12000);
+          this.time.delayedCall(tiempoEspera, () => {
+            const offsetX = Phaser.Math.Between(-20, 20);
+            const offsetY = Phaser.Math.Between(-10, 10);
+            const nuevoX = Phaser.Math.Clamp(decorativo.x + offsetX, 50, this.sys.game.config.width - 50);
+            const nuevoY = Phaser.Math.Clamp(decorativo.y + offsetY, 50, this.sys.game.config.height - 50);
+            this.tweens.add({
+              targets: decorativo,
+              x: nuevoX,
+              y: nuevoY,
+              duration: Phaser.Math.Between(1000, 2000),
+              ease: 'Sine.easeInOut',
+              onComplete: moverAnimal
+            });
+          });
+        };
+        moverAnimal();
+      }
+    }
+
+    // 🎵 Música
+    this.musica = this.sound.add('musica1', { loop: true, volume: 0.4 });
+    if (this.sound.context.state === 'suspended') {
+      this.sound.context.resume().then(() => this.musica.play());
+    } else {
+      this.musica.play();
+    }
   }
 
   update() {
     let speed = 200;
     this.player.body.setVelocity(0);
 
-    // ✅ Movimiento con teclado
-    if (this.cursors.left.isDown) {
-      this.player.body.setVelocityX(-speed);
-    } else if (this.cursors.right.isDown) {
-      this.player.body.setVelocityX(speed);
-    }
+    if (this.cursors.left.isDown) this.player.body.setVelocityX(-speed);
+    else if (this.cursors.right.isDown) this.player.body.setVelocityX(speed);
+    if (this.cursors.up.isDown) this.player.body.setVelocityY(-speed);
+    else if (this.cursors.down.isDown) this.player.body.setVelocityY(speed);
 
-    if (this.cursors.up.isDown) {
-      this.player.body.setVelocityY(-speed);
-    } else if (this.cursors.down.isDown) {
-      this.player.body.setVelocityY(speed);
-    }
-
-    // ✅ Movimiento con toque/mouse
     if (this.isTouching) {
       this.physics.moveTo(this.player, this.targetX, this.targetY, speed);
     }
 
-    // ✅ Detectar movimiento
     this.isPlayerMoving = Phaser.Math.Distance.Between(
       this.player.x, this.player.y,
       this.lastPlayerPosition.x, this.lastPlayerPosition.y
@@ -118,7 +170,6 @@ export class WorldMap extends Scene {
 
     this.lastPlayerPosition.set(this.player.x, this.player.y);
 
-    // ✅ Lógica para seguidores
     const followSpeed = speed * 0.8;
     const stopDistance = 10;
     let tx = this.player.x;
@@ -127,11 +178,8 @@ export class WorldMap extends Scene {
     if (this.isPlayerMoving) {
       this.followers.forEach((f, index) => {
         const dist = Phaser.Math.Distance.Between(f.x, f.y, tx, ty);
-        if (dist > stopDistance) {
-          this.physics.moveTo(f, tx, ty, followSpeed);
-        } else {
-          f.body.setVelocity(0);
-        }
+        if (dist > stopDistance) this.physics.moveTo(f, tx, ty, followSpeed);
+        else f.body.setVelocity(0);
         tx = f.x;
         ty = f.y;
       });
@@ -154,9 +202,9 @@ export class WorldMap extends Scene {
 
   entrarPortal(player, portal) {
     const datos = portal.getData('info');
+    console.log('✅ Entrando al portal:', datos);
     this.player.body.setVelocity(0);
     this.isTouching = false;
-
     this.scene.start('MainGame', { portal: datos });
   }
 }
