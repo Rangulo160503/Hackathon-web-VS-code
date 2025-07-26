@@ -5,6 +5,19 @@ export class MainGame extends Scene {
     super('MainGame');
   }
 
+  preload() {
+    this.load.image('car1', 'assets/car1.png');
+    this.load.image('car2', 'assets/car2.png');
+    this.load.image('fondoGame', 'assets/fondo.png');
+    this.load.image('child1', 'assets/nino1.png');
+    this.load.image('child2', 'assets/nino2.png');
+    this.load.image('child3', 'assets/nino3.png');
+    this.load.image('profesora', 'assets/prof.png');
+    this.load.image('btnExperiencia', 'assets/1.png');
+    this.load.image('btnReintentar', 'assets/2.png');
+    this.load.image('btnSalir', 'assets/3.png');
+  }
+
   create() {
     this.esMovil = /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
     this.movimientoLateral = 0;
@@ -15,20 +28,30 @@ export class MainGame extends Scene {
     const worldHeight = 3000;
     const worldWidth = 1024;
 
-    this.add.rectangle(0, 0, worldWidth, worldHeight, 0x87ceeb).setOrigin(0, 0);
+    const viewWidth = this.cameras.main.width;
+    const viewHeight = this.cameras.main.height;
+
+    this.add.image(0, 0, 'fondoGame')
+      .setOrigin(0, 0)
+      .setDisplaySize(viewWidth, viewHeight)
+      .setScrollFactor(0);
+
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
     this.physics.world.gravity.y = 1000;
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
-    this.player = this.add.rectangle(512, worldHeight - 100, 32, 32, 0xffff00).setOrigin(0.5);
-    this.physics.add.existing(this.player);
+    this.player = this.physics.add.image(512, worldHeight - 100, 'profesora')
+      .setOrigin(0.05)
+      .setScale(0.05);
     this.player.body.setCollideWorldBounds(false);
 
-    const colors = [0xff9999, 0x99ff99, 0x9999ff];
+    const childKeys = ['child1', 'child2', 'child3'];
     this.followers = [];
+
     for (let i = 0; i < 3; i++) {
-      const f = this.add.rectangle(this.player.x, this.player.y + (i + 1) * 40, 24, 24, colors[i]).setOrigin(0.5);
-      this.physics.add.existing(f);
+      const f = this.physics.add.image(this.player.x, this.player.y + (i + 1) * 40, childKeys[i])
+        .setOrigin(0.05)
+        .setScale(0.05);
       f.body.setCollideWorldBounds(false);
       f.body.setAllowGravity(true);
       this.followers.push(f);
@@ -40,8 +63,18 @@ export class MainGame extends Scene {
     for (let i = 0; i < 10; i++) {
       const x = Phaser.Math.Between(100, 900);
       const y = worldHeight - i * 180;
-      const platform = this.add.rectangle(x, y, 120, 20, 0x228B22);
-      this.physics.add.existing(platform, true);
+      const key = i % 2 === 0 ? 'car1' : 'car2';
+      const scale = 0.15;
+      const platform = this.physics.add.staticImage(x, y, key)
+        .setScale(scale)
+        .refreshBody();
+      const adjustedWidth = platform.displayWidth * 0.5;
+      const adjustedHeight = platform.displayHeight * 0.1;
+      platform.body.setSize(adjustedWidth, adjustedHeight);
+      platform.body.setOffset(
+        (platform.displayWidth - adjustedWidth) / 2,
+        (platform.displayHeight - adjustedHeight) / 2
+      );
       this.platforms.add(platform);
     }
 
@@ -74,32 +107,35 @@ export class MainGame extends Scene {
 
     if (this.esMovil) {
       this.input.on('pointerdown', (pointer) => {
-        if (pointer.x < this.sys.game.config.width / 2) {
-          this.movimientoLateral = -1;
-        } else {
-          this.movimientoLateral = 1;
-        }
+        this.movimientoLateral = pointer.x < this.sys.game.config.width / 2 ? -1 : 1;
       });
-
       this.input.on('pointerup', () => {
         this.movimientoLateral = 0;
         this.player.body.setVelocityX(0);
       });
     }
+
+    this.botonSalir = this.add.text(980, 20, '❌', {
+      fontSize: '32px',
+      color: '#ffffff',
+      padding: { x: 10, y: 5 }
+    }).setOrigin(1, 0).setInteractive().setScrollFactor(0);
+
+    this.botonSalir.on('pointerdown', () => {
+      this.scene.start('WorldMap');
+    });
+
   }
 
   saltar(jugador) {
     const ahora = this.time.now;
     if (jugador.body.blocked.down && ahora - this.ultimoSalto > 100) {
-      jugador.body.setVelocityY(-900);
+      jugador.body.setVelocityY(-1000);
       this.ultimoSalto = ahora;
       this.escalonesTocados++;
-
       this.followers.forEach((f, i) => {
         if (f.body.blocked.down) {
-          this.time.delayedCall(i * 100, () => {
-            f.body.setVelocityY(-850);
-          });
+          this.time.delayedCall(i * 100, () => f.body.setVelocityY(-850));
         }
       });
     }
@@ -109,49 +145,31 @@ export class MainGame extends Scene {
     this.cameras.main.stopFollow();
     this.cameras.main.scrollY = 0;
 
-    const overlay = this.add.rectangle(512, 384, 1024, 768, 0x000000, 0.6).setInteractive().disableInteractive();
-    const modalBox = this.add.rectangle(512, 384, 400, 300, 0xffffff);
-    const modalText = this.add.text(512, 320, 'Escalón 3 alcanzado', { fontSize: '22px', color: '#000' }).setOrigin(0.5);
+    const btnVer = this.add.image(512, 300, 'btnExperiencia').setOrigin(0.5).setInteractive().setDepth(102).setScale(0.9);
+    const btnReiniciar = this.add.image(512, 530, 'btnReintentar').setOrigin(0.5).setInteractive().setDepth(102).setScale(0.9);
+    const btnSalir = this.add.image(512, 670, 'btnSalir').setOrigin(0.5).setInteractive().setDepth(102).setScale(0.9);
 
-    const btnVer = this.add.text(512, 370, 'Ver video', {
-      fontSize: '20px', backgroundColor: '#00aaff', color: '#fff', padding: { x: 16, y: 8 }
-    }).setOrigin(0.5).setInteractive();
-
-    const btnReiniciar = this.add.text(512, 420, 'Reintentar', {
-      fontSize: '20px', backgroundColor: '#ffaa00', color: '#fff', padding: { x: 16, y: 8 }
-    }).setOrigin(0.5).setInteractive();
-
-    const btnSalir = this.add.text(512, 470, 'Salir al mapa', {
-      fontSize: '20px', backgroundColor: '#ff4444', color: '#fff', padding: { x: 16, y: 8 }
-    }).setOrigin(0.5).setInteractive();
-
-    // ✅ Compatibilidad móvil mejorada
-    btnVer.on('pointerup', () => {
-      setTimeout(() => {
-        const link = this.portalInfo?.link || 'https://example.com';
-        window.open(link, '_blank');
-      }, 0);
+    [btnVer, btnReiniciar, btnSalir].forEach((btn, i) => {
+      btn.setAlpha(0);
+      this.tweens.add({ targets: btn, alpha: 1, y: '+=5', ease: 'Sine.easeInOut', duration: 400, delay: i * 100 });
     });
 
+    btnVer.on('pointerdown', () => {
+      const link = this.portalInfo?.link || 'https://example.com';
+      window.open(link, '_blank');
+    });
     btnReiniciar.on('pointerdown', () => this.scene.restart({ portal: this.portalInfo }));
     btnSalir.on('pointerdown', () => this.scene.start('WorldMap'));
 
-    this.modalGroup = this.add.group([overlay, modalBox, modalText, btnVer, btnReiniciar, btnSalir]);
+    this.modalGroup = this.add.group([btnVer, btnReiniciar, btnSalir]);
   }
 
   update() {
     const speed = 200;
-
     if (this.esMovil) {
       this.player.body.setVelocityX(this.movimientoLateral * speed);
     } else {
-      if (this.cursors.left.isDown) {
-        this.player.body.setVelocityX(-speed);
-      } else if (this.cursors.right.isDown) {
-        this.player.body.setVelocityX(speed);
-      } else {
-        this.player.body.setVelocityX(0);
-      }
+      this.player.body.setVelocityX(this.cursors.left.isDown ? -speed : this.cursors.right.isDown ? speed : 0);
     }
 
     this.isPlayerMoving = Phaser.Math.Distance.Between(

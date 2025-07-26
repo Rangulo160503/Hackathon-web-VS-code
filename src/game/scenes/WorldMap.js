@@ -17,6 +17,11 @@ export class WorldMap extends Scene {
     this.load.image('tor2', 'assets/tor2.png');
     this.load.image('man1', 'assets/man1.png');
     this.load.audio('musica1', 'assets/audio/musica1.mp3');
+    this.load.image('profesora', 'assets/prof.png');
+this.load.image('child1', 'assets/nino1.png');
+this.load.image('child2', 'assets/nino2.png');
+this.load.image('child3', 'assets/nino3.png');
+
   }
 
   create() {
@@ -24,28 +29,25 @@ export class WorldMap extends Scene {
     fondo.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 
     // Generar textura amarilla
-const g = this.add.graphics();
-g.fillStyle(0xffff00, 1);
-g.fillRect(0, 0, 32, 32);
-g.generateTexture('jugadorAmarillo', 32, 32);
-g.destroy();
-
-    // ✅ Jugador (sprite en lugar de rectangle para colisiones)
-    this.player = this.physics.add.sprite(400, 300, 'jugadorAmarillo')
-  .setOrigin(0.5)
+this.player = this.physics.add.image(200, 300, 'profesora')
+  .setOrigin(0.05)
+  .setScale(0.05) // ⬅️ Ajustá la escala si la imagen es muy grande
   .setCollideWorldBounds(true);
+
 
     this.followers = [];
     this.dispersePositions = [];
 
-    const colors = [0xff9999, 0x99ff99, 0x9999ff];
-    for (let i = 0; i < 3; i++) {
-      let follower = this.add.rectangle(400, 300 + (i + 1) * 40, 24, 24, colors[i]);
-      this.physics.add.existing(follower);
-      follower.body.setCollideWorldBounds(true);
-      this.followers.push(follower);
-      this.dispersePositions.push(new Phaser.Math.Vector2());
-    }
+    const childKeys = ['child1', 'child2', 'child3'];
+for (let i = 0; i < 3; i++) {
+  let follower = this.physics.add.image(200, 300 + (i + 1) * 40, childKeys[i])
+    .setOrigin(0.05)
+    .setScale(0.05)
+    .setCollideWorldBounds(true);
+  this.followers.push(follower);
+  this.dispersePositions.push(new Phaser.Math.Vector2());
+}
+
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.isTouching = false;
@@ -141,14 +143,9 @@ g.destroy();
       }
     }
 
-    // 🎵 Música
-    this.musica = this.sound.add('musica1', { loop: true, volume: 0.4 });
-    if (this.sound.context.state === 'suspended') {
-      this.sound.context.resume().then(() => this.musica.play());
-    } else {
-      this.musica.play();
-    }
-  }
+    
+  
+}
 
   update() {
     let speed = 200;
