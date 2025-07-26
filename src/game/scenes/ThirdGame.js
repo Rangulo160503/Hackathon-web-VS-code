@@ -1,14 +1,14 @@
 import { Scene } from 'phaser';
 
-export class MainGame extends Scene {
+export class ThirdGame extends Scene {
   constructor() {
-    super('MainGame');
+    super('ThirdGame');
   }
 
   preload() {
-    this.load.image('car1', 'assets/car1.png');
-    this.load.image('car2', 'assets/car2.png');
-    this.load.image('fondoGame', 'assets/fondo.png');
+    this.load.image('ro1', 'assets/ro1.png');
+    this.load.image('ro2', 'assets/ro2.png');
+    this.load.image('land', 'assets/land.png');
     this.load.image('child1', 'assets/nino1.png');
     this.load.image('child2', 'assets/nino2.png');
     this.load.image('child3', 'assets/nino3.png');
@@ -31,7 +31,7 @@ export class MainGame extends Scene {
     const viewWidth = this.cameras.main.width;
     const viewHeight = this.cameras.main.height;
 
-    this.add.image(0, 0, 'fondoGame')
+    this.add.image(0, 0, 'land')
       .setOrigin(0, 0)
       .setDisplaySize(viewWidth, viewHeight)
       .setScrollFactor(0);
@@ -63,7 +63,7 @@ export class MainGame extends Scene {
     for (let i = 0; i < 10; i++) {
       const x = Phaser.Math.Between(100, 900);
       const y = worldHeight - i * 180;
-      const key = i % 2 === 0 ? 'car1' : 'car2';
+      const key = i % 2 === 0 ? 'ro1' : 'ro2';
       const scale = 0.15;
       const platform = this.physics.add.staticImage(x, y, key)
         .setScale(scale)

@@ -24,128 +24,123 @@ this.load.image('child3', 'assets/nino3.png');
 
   }
 
-  create() {
-    const fondo = this.add.image(0, 0, 'mapa4').setOrigin(0);
-    fondo.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
+ create() {
+  const fondo = this.add.image(0, 0, 'mapa4').setOrigin(0);
+  fondo.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 
-    // Generar textura amarilla
-this.player = this.physics.add.image(200, 300, 'profesora')
-  .setOrigin(0.05)
-  .setScale(0.05) // ⬅️ Ajustá la escala si la imagen es muy grande
-  .setCollideWorldBounds(true);
-
-
-    this.followers = [];
-    this.dispersePositions = [];
-
-    const childKeys = ['child1', 'child2', 'child3'];
-for (let i = 0; i < 3; i++) {
-  let follower = this.physics.add.image(200, 300 + (i + 1) * 40, childKeys[i])
+  this.player = this.physics.add.image(200, 300, 'profesora')
     .setOrigin(0.05)
     .setScale(0.05)
     .setCollideWorldBounds(true);
-  this.followers.push(follower);
-  this.dispersePositions.push(new Phaser.Math.Vector2());
-}
 
+  this.followers = [];
+  this.dispersePositions = [];
 
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.isTouching = false;
-    this.targetX = this.player.x;
-    this.targetY = this.player.y;
+  const childKeys = ['child1', 'child2', 'child3'];
+  for (let i = 0; i < 3; i++) {
+    let follower = this.physics.add.image(200, 300 + (i + 1) * 40, childKeys[i])
+      .setOrigin(0.05)
+      .setScale(0.05)
+      .setCollideWorldBounds(true);
+    this.followers.push(follower);
+    this.dispersePositions.push(new Phaser.Math.Vector2());
+  }
 
-    this.input.on('pointerdown', pointer => {
-      this.isTouching = true;
+  this.cursors = this.input.keyboard.createCursorKeys();
+  this.isTouching = false;
+  this.targetX = this.player.x;
+  this.targetY = this.player.y;
+
+  this.input.on('pointerdown', pointer => {
+    this.isTouching = true;
+    this.targetX = pointer.worldX;
+    this.targetY = pointer.worldY;
+  });
+  this.input.on('pointermove', pointer => {
+    if (this.isTouching) {
       this.targetX = pointer.worldX;
       this.targetY = pointer.worldY;
-    });
-    this.input.on('pointermove', pointer => {
-      if (this.isTouching) {
-        this.targetX = pointer.worldX;
-        this.targetY = pointer.worldY;
-      }
-    });
-    this.input.on('pointerup', () => {
-      this.isTouching = false;
-      this.player.body.setVelocity(0);
-    });
+    }
+  });
+  this.input.on('pointerup', () => {
+    this.isTouching = false;
+    this.player.body.setVelocity(0);
+  });
 
-    this.lastPlayerPosition = new Phaser.Math.Vector2(this.player.x, this.player.y);
-    this.isPlayerMoving = false;
-    this.portales = this.physics.add.group();
+  this.lastPlayerPosition = new Phaser.Math.Vector2(this.player.x, this.player.y);
+  this.isPlayerMoving = false;
+  this.portales = this.physics.add.group();
 
-    obtenerPuntos().then(puntos => {
-      puntos.forEach(p => {
-        let portalKey = 'portal1';
-        if (p.id === "2") portalKey = 'portal2';
-        else if (p.id === "3") portalKey = 'portal3';
+  obtenerPuntos().then(puntos => {
+    puntos.forEach(p => {
+      const idNum = parseInt(p.id, 10);
+const portalKey = `portal${((idNum - 1) % 3) + 1}`;
 
-        const portal = this.physics.add.sprite(p.x, p.y, portalKey)
-          .setOrigin(0.5)
-          .setDisplaySize(80, 150)
-          .setImmovable(true);
 
-        portal.body.setSize(80, 150);
-        portal.setData('info', p);
+      const portal = this.physics.add.sprite(p.x, p.y, portalKey)
+        .setOrigin(0.5)
+        .setDisplaySize(80, 150)
+        .setImmovable(true);
 
-        this.portales.add(portal);
-      });
+      portal.body.setSize(80, 150); // ajustable según el tamaño real de la imagen
+      portal.setData('info', p);
 
-      this.physics.add.overlap(this.player, this.portales, this.entrarPortal, null, this);
+      this.portales.add(portal);
     });
 
-    // 🛰️ Puntos decorativos
-    this.puntosDecorativos = this.add.group();
-    const decorativosKeys = ['sat1', 'sat2', 'tor1', 'tor2', 'man1'];
+    this.physics.add.overlap(this.player, this.portales, this.entrarPortal, null, this);
+  });
 
-    for (let i = 0; i < 10; i++) {
-      const x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
-      const y = Phaser.Math.Between(50, this.sys.game.config.height - 50);
+  // 🛰️ Puntos decorativos
+  this.puntosDecorativos = this.add.group();
+  const decorativosKeys = ['sat1', 'sat2', 'tor1', 'tor2', 'man1'];
 
-      const spriteKey = Phaser.Utils.Array.GetRandom(decorativosKeys);
-      const decorativo = this.add.image(x, y, spriteKey).setOrigin(0.5).setScale(0.08);
+  for (let i = 0; i < 10; i++) {
+    const x = Phaser.Math.Between(50, this.sys.game.config.width - 50);
+    const y = Phaser.Math.Between(50, this.sys.game.config.height - 50);
 
-      this.puntosDecorativos.add(decorativo);
+    const spriteKey = Phaser.Utils.Array.GetRandom(decorativosKeys);
+    const decorativo = this.add.image(x, y, spriteKey).setOrigin(0.5).setScale(0.08);
+    this.puntosDecorativos.add(decorativo);
 
-      if (spriteKey.startsWith('sat')) {
-        const moverSat = () => {
-          const newX = Phaser.Math.Between(50, this.sys.game.config.width - 50);
-          const newY = Phaser.Math.Between(50, this.sys.game.config.height - 50);
+    if (spriteKey.startsWith('sat')) {
+      const moverSat = () => {
+        const newX = Phaser.Math.Between(50, this.sys.game.config.width - 50);
+        const newY = Phaser.Math.Between(50, this.sys.game.config.height - 50);
+        this.tweens.add({
+          targets: decorativo,
+          x: newX,
+          y: newY,
+          duration: Phaser.Math.Between(8000, 15000),
+          ease: 'Sine.easeInOut',
+          onComplete: moverSat
+        });
+      };
+      moverSat();
+    } else {
+      const moverAnimal = () => {
+        const tiempoEspera = Phaser.Math.Between(5000, 12000);
+        this.time.delayedCall(tiempoEspera, () => {
+          const offsetX = Phaser.Math.Between(-20, 20);
+          const offsetY = Phaser.Math.Between(-10, 10);
+          const nuevoX = Phaser.Math.Clamp(decorativo.x + offsetX, 50, this.sys.game.config.width - 50);
+          const nuevoY = Phaser.Math.Clamp(decorativo.y + offsetY, 50, this.sys.game.config.height - 50);
           this.tweens.add({
             targets: decorativo,
-            x: newX,
-            y: newY,
-            duration: Phaser.Math.Between(8000, 15000),
+            x: nuevoX,
+            y: nuevoY,
+            duration: Phaser.Math.Between(1000, 2000),
             ease: 'Sine.easeInOut',
-            onComplete: moverSat
+            onComplete: moverAnimal
           });
-        };
-        moverSat();
-      } else {
-        const moverAnimal = () => {
-          const tiempoEspera = Phaser.Math.Between(5000, 12000);
-          this.time.delayedCall(tiempoEspera, () => {
-            const offsetX = Phaser.Math.Between(-20, 20);
-            const offsetY = Phaser.Math.Between(-10, 10);
-            const nuevoX = Phaser.Math.Clamp(decorativo.x + offsetX, 50, this.sys.game.config.width - 50);
-            const nuevoY = Phaser.Math.Clamp(decorativo.y + offsetY, 50, this.sys.game.config.height - 50);
-            this.tweens.add({
-              targets: decorativo,
-              x: nuevoX,
-              y: nuevoY,
-              duration: Phaser.Math.Between(1000, 2000),
-              ease: 'Sine.easeInOut',
-              onComplete: moverAnimal
-            });
-          });
-        };
-        moverAnimal();
-      }
+        });
+      };
+      moverAnimal();
     }
+  }
 
-    
-  
 }
+
 
   update() {
     let speed = 200;
@@ -198,10 +193,31 @@ for (let i = 0; i < 3; i++) {
   }
 
   entrarPortal(player, portal) {
-    const datos = portal.getData('info');
-    console.log('✅ Entrando al portal:', datos);
-    this.player.body.setVelocity(0);
-    this.isTouching = false;
-    this.scene.start('MainGame', { portal: datos });
+  const datos = portal.getData('info');
+  console.log('✅ Entrando al portal:', datos);
+
+  // 🔀 Determinar a qué escena ir según el ID
+  let destino = 'MainGame'; // por defecto
+  switch (datos.id) {
+    case "2":
+    case "5":
+      destino = 'SecondGame';
+      break;
+    case "3":
+    case "6":
+      destino = 'ThirdGame';
+      break;
+    case "1":
+    case "4":
+    default:
+      destino = 'MainGame';
+      break;
   }
+
+  this.player.body.setVelocity(0);
+  this.isTouching = false;
+
+  this.scene.start(destino, { portal: datos });
+}
+
 }

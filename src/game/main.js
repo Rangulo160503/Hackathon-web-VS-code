@@ -5,6 +5,8 @@ import { WorldMap } from './scenes/WorldMap';
 import { MainGame } from './scenes/MainGame';
 import { GameOver } from './scenes/GameOver';
 import { AUTO, Game, Physics } from 'phaser';
+import { SecondGame } from './scenes/SecondGame';
+import { ThirdGame } from './scenes/ThirdGame';
 
 const config = {
     type: AUTO,
@@ -26,7 +28,9 @@ const config = {
         Preloader,
         MainMenu,
         WorldMap,   //  Mapa con portales
-        MainGame,   //  Minijuego
+        MainGame,
+        SecondGame,
+        ThirdGame,   //  Minijuego
         GameOver
     ]
 };
